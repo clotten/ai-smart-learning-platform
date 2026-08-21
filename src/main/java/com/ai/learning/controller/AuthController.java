@@ -7,6 +7,7 @@ import com.ai.learning.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class AuthController {
     /**
      * 注册
      */
+    @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result<Void> register(@RequestBody @Valid SysUser user){
         userService.register(user);
@@ -36,6 +38,7 @@ public class AuthController {
     /**
      * 登录：成功返回token + 用户信息
      */
+    @Operation(summary = "用户登录，返回token")
     @PostMapping("/login")
     public Result<Map<String,Object>> login(@RequestBody Map<String,String> params){
         String username = params.get("username");

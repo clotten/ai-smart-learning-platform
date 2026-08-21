@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/user")
 public class UserController{
-
+    @Operation(summary = "返回用户数据")
     @GetMapping("/info")
     public Result<Map<String,Object>> info(HttpServletRequest request){
         Map<String,Object> data = new HashMap<>();
