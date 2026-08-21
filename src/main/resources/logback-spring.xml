@@ -47,9 +47,11 @@
         </encoder>
     </appender>
 
-    <!-- ===== 开发环境（local profile）：DEBUG 级别，方便排查 ===== -->
+    <!-- ===== 开发环境（local profile）：框架日志 INFO，只对自己代码开 DEBUG ===== -->
     <springProfile name="local">
-        <root level="DEBUG">
+        <!-- 只看我们自己项目的 DEBUG（含业务日志），Spring 框架日志保持 INFO -->
+        <logger name="com.ai.learning" level="DEBUG"/>
+        <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </root>

@@ -48,8 +48,11 @@ app:
     expire-minutes: 1440
 
 # ===== Swagger 接口文档 =====
+# 安全策略：默认关闭（生产环境绝不暴露），local 环境在 application-local.yml 里开启
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    enabled: false
   api-docs:
     path: /v3/api-docs
+    enabled: false
