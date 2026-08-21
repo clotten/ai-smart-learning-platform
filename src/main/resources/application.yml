@@ -5,12 +5,15 @@ spring:
   application:
     name: learning-platform
 
-  # ===== 数据库配置（MySQL 8，FlyEnv 管理）=====
+  # 默认激活 local 环境：本地敏感配置在 application-local.yml（已被 gitignore，不上传）
+  profiles:
+    active: local
+
+  # ===== 数据库配置（MySQL 8）=====
+  # 注意：用户名/密码在 application-local.yml，本文件不含任何敏感信息，可安全上传 GitHub
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root   # 如果连不上，改成你的 MySQL 密码
 
   # ===== Redis 配置（Day4 装好 Redis 后生效）=====
   data:
@@ -41,9 +44,7 @@ mybatis-plus:
 # ===== 自定义配置：JWT =====
 app:
   jwt:
-    # HS256 密钥（至少 32 字节），上线前必须换掉
-    secret: ai-learning-platform-jwt-secret-key-2026-change-me-please-0123456789
-    # token 有效期（分钟）
+    # 签名密钥在 application-local.yml（敏感信息不上传），token 有效期如下
     expire-minutes: 1440
 
 # ===== Swagger 接口文档 =====
