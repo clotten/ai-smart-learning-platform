@@ -1,0 +1,29 @@
+# ===== Java / Maven =====
+*.class
+target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+out/
+*.hprof
+
+# ===== 本地敏感配置（绝不上传！）=====
+application-local.yml
+*.local.yml
+
+# ===== 日志 =====
+logs/
+*.log
+
+# ===== 上传文件 / 临时文件 =====
+uploads/
+tmp/
+temp/
+
+# ===== 系统 =====
+.DS_Store
+Thumbs.db
