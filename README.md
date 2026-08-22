@@ -10,8 +10,8 @@
 - 📚 **题库管理**：题目的增删改查、分页查询、条件筛选
 - ✍️ **刷题练习**：答题判分、错题本、学习统计
 - 🏆 **排行榜**：Redis ZSet 实现刷题排行榜
-- 🤖 **AI 能力**：DeepSeek 大模型接入，AI 按知识点出题、AI 讲解错题（SSE 流式）
-- 🌐 **前后端分离**：Vue3 + Element Plus 前端
+- 🤖 **AI 能力**：DeepSeek 大模型接入，AI 按知识点出题、AI 错题讲解（Prompt 三段式设计 + 输出容错解析）
+- 🌐 **前端（开发中）**：Vue3 + Element Plus 前后端分离
 
 ## 🛠 技术栈
 
@@ -48,10 +48,13 @@ ai-smart-learning-platform
 - JDK 17+ · Maven 3.6+ · MySQL 8 · Redis（模块四后需要）
 
 ### 1. 初始化数据库
-执行 `src/main/resources/db/init.sql`（自动创建 `ai_learning_platform` 库和 `sys_user` 表）
+依次执行 `src/main/resources/db/` 下的脚本：
+- `init.sql`：建库 + 用户表
+- `init-module3.sql`：答题记录表
 
-### 2. 修改配置
-编辑 `application.yml`，把 `spring.datasource.password` 改成你的 MySQL 密码
+### 2. 本地配置
+复制 `src/main/resources/application-local.example.yml` 为 **`application-local.yml`**，填入你的 MySQL 密码和 DeepSeek API Key。
+（该文件已被 .gitignore 排除，不会上传 GitHub——**这是公开仓库的安全规范**）
 
 ### 3. 启动项目
 ```bash
@@ -94,9 +97,9 @@ mvn test
 - [x] 模块一：JWT 登录鉴权
 - [x] 模块二：题库管理（CRUD + 分页）
 - [x] 模块三：刷题 + 错题本
-- [ ] 模块四：Redis 缓存 + 排行榜
-- [ ] 模块五：AI 出题 / 讲题（DeepSeek）
-- [ ] 模块六：Vue3 前端 + 部署上线
+- [x] 模块四：Redis 缓存 + 排行榜
+- [x] 模块五：AI 出题 / 讲题（DeepSeek）
+- [ ] 模块六：Vue3 前端 + 部署上线（开发中）
 
 ## 📄 License
 
