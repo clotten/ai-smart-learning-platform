@@ -8,18 +8,28 @@ import com.ai.learning.service.QuestionService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class QuestionServiceImpl implements QuestionService {
 
-    @Autowired
-    private QuestionMapper questionMapper;
+    private final QuestionMapper questionMapper;
 
+    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    private static final String QUESTION_CACHE_KEY = "learn:questin:";
     @Override
     public void add(Question question){
         questionMapper.insert(question);
@@ -70,6 +80,37 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public Question getById(Long id){
-        return questionMapper.selectById(id);
+        //1.先查缓存
+        String key = QUESTION_CACHE_KEY + id;
+        String json = redisTemplate.opsForValue().get(key);
+        if(json !=null) {
+            if ("NULL".equals(json)) {
+                throw new BusinessException("题目不存在");   //穿透保护：空值缓存命中
+            }
+            try {
+                return objectMapper.readValue(json, Question.class);
+
+            } catch (Exception e) {
+                throw new BusinessException("缓存数据解析失败");
+            }
+        }
+
+        //2.缓存没有->查数据库
+        Question question = questionMapper.selectById(id);
+
+        if(question == null){
+            //3.防穿透：查不到也缓存空值（短过期2分钟）
+            redisTemplate.opsForValue().set(key,"NULL",Duration.ofMinutes(2));
+            throw new BusinessException("题目不存在");
+        }
+
+        //4.回填缓存：30分钟 + 随机 0-5 分钟（防雪崩）
+        long expire = 30 + ThreadLocalRandom.current().nextInt(6);
+        try{
+            redisTemplate.opsForValue().set(key,objectMapper.writeValueAsString(question),Duration.ofMinutes(expire));
+        }catch(Exception e){
+            throw new BusinessException("缓存写入失败");
+        }
+        return question;
     }
 }

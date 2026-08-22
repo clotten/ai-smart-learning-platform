@@ -76,5 +76,10 @@ public class QuestionController {
         return Result.success();
     }
 
+    @Operation(summary = "题目详细")
+    @GetMapping("/{id}")
+    public Result<Question> detail(@PathVariable Long id){
+        return Result.success(questionService.getById(id));
+    }
 
 }

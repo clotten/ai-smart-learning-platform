@@ -31,7 +31,7 @@ public class AnswerServiceImpl implements AnswerService {
 
     private final QuestionMapper questionMapper;
     private final AnswerRecordMapper answerRecordMapper;
-
+    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
     /**
      * 提交答案：判分 + 存记录
      * Transactional:记录插入（和以后可能的统计更新）要么全成、要么全回滚
@@ -48,6 +48,10 @@ public class AnswerServiceImpl implements AnswerService {
         //2.判分：答案归一化后比较（解决多选题“AB”和“BA的顺序问题”）
         boolean correct = normalize(dto.getUserAnswer()).equals(normalize(question.getAnswer()));
 
+        //答对 -> 排行榜刷题数 +1 （ZINCRBY）
+        if(correct){
+            redisTemplate.opsForZSet().incrementScore("learn:leaderboard",userId.toString(),1);
+        }
         //3.存答题记录
         AnswerRecord record = new AnswerRecord();
         record.setUserId(userId);
