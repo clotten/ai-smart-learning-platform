@@ -46,7 +46,9 @@ app:
   jwt:
     # 签名密钥在 application-local.yml（敏感信息不上传），token 有效期如下
     expire-minutes: 1440
-
+  deepseek:
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
 # ===== Swagger 接口文档 =====
 # 安全策略：默认关闭（生产环境绝不暴露），local 环境在 application-local.yml 里开启
 springdoc:

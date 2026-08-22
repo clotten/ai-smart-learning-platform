@@ -46,6 +46,7 @@ public class QuestionServiceImpl implements QuestionService {
             throw new BusinessException("题目不存在");
         }
         questionMapper.updateById(question);
+        redisTemplate.delete(QUESTION_CACHE_KEY + question.getId()); //删缓存
     }
 
     @Override
@@ -54,6 +55,7 @@ public class QuestionServiceImpl implements QuestionService {
             throw new BusinessException("题目不存在");
         }
         questionMapper.deleteById(id);  //@TableLogic 自动变成 UPDATE deleted=1
+        redisTemplate.delete(QUESTION_CACHE_KEY + id); //删缓存
     }
 
     @Override
