@@ -1,10 +1,12 @@
 package com.ai.learning.controller;
 
+import com.ai.learning.VO.LoginVO;
 import com.ai.learning.common.Result;
 import com.ai.learning.entity.SysUser;
 import com.ai.learning.service.UserService;
 import com.ai.learning.util.JwtUtil;
 import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +42,7 @@ public class AuthController {
      */
     @Operation(summary = "用户登录，返回token")
     @PostMapping("/login")
-    public Result<Map<String,Object>> login(@RequestBody Map<String,String> params){
+    public Result<LoginVO> login(@RequestBody Map<String,String> params){
         String username = params.get("username");
         String password = params.get("password");
 
@@ -50,12 +52,12 @@ public class AuthController {
         //2.登陆成功 + 签发token
         String token = jwtUtil.generateToken(user.getId(),user.getUsername(),user.getRole());
 
-        //3.返回token + 用户信息
-        Map<String,Object> data = new HashMap<>();
-        data.put("token",token);
-        data.put("user",user);
+        //3.组装VO（没有password字段，天然不泄露）+token
+        LoginVO vo = new LoginVO();
+        BeanUtils.copyProperties(user,vo);
+        vo.setToken(token);
 
-        return Result.success(data);
+        return Result.success(vo);
     }
 
 }

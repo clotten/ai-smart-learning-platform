@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService{
         }
         //4.插入数据库
         userMapper.insert(user);
-        log.info("用户注册成功：｛｝",user.getUsername());
+        log.info("用户注册成功：{}",user.getUsername());
     }
 
     @Override
@@ -55,8 +55,6 @@ public class UserServiceImpl implements UserService{
         if(!encoder.matches(password,user.getPassword())){
             throw new BusinessException("密码错误");
         }
-        //3.清空密码再返回（密码绝不能给前段）
-        user.setPassword(null);
         return user;
     }
 }
