@@ -7,8 +7,11 @@ import com.ai.learning.dto.AiExplainDTO;
 import com.ai.learning.entity.Question;
 import com.ai.learning.mapper.QuestionMapper;
 import com.ai.learning.service.AiService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,6 +21,7 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiServiceImpl implements AiService {
@@ -79,6 +83,45 @@ public class AiServiceImpl implements AiService {
         return vo;
     }
 
+    @Override
+    public Question generateQuestion(String category, Integer type){
+        //1.设计Prompt：明确要求只输出JSON
+        String prompt = """
+                请生成一道%s题目，要求：
+                            1. 题型：%s
+                            2. 只输出一个 JSON 对象，不要任何其他文字
+                            3. JSON 格式必须是：{"type":%d,"category":"%s","content":"题干","options":"选项JSON","answer":"正确答案","analysis":"解析","difficulty":1-5(取整数)}
+                            4. options 格式：{"A":"选项A","B":"选项B","C":"选项C","D":"选项D"}，判断题 options 为 null
+                            5. 答案必须真实正确
+                """.formatted(category,type == 1 ? "单选题" : (type == 2 ? "多选题" : "判断题"), type, category);
+
+        //2.调AI
+        String aiJson = callDeepSeek(prompt);
+
+        //3.解析JSON -> Question （AI可能加```json```代码块，先清理）
+        try{
+            String clean = aiJson.replace("```json","").replace("```","").trim();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(clean);
+
+            Question q = new Question();
+            q.setType(node.get("type").asInt());
+            q.setCategory(node.get("category").asText());
+            q.setContent(node.get("content").asText());
+            //options 统一处理：字符串直接用，对象转成JSON字符串
+            JsonNode optionsNode = node.get("options");
+            if(optionsNode != null && !optionsNode.isNull()){
+                q.setOptions(optionsNode.isTextual() ? optionsNode.asText() : optionsNode.toString());
+            }
+            q.setAnswer(node.get("answer").asText());
+            q.setAnalysis(node.get("analysis").asText());
+            q.setDifficulty(node.get("difficulty").asInt());
+            return q;
+        } catch (Exception e) {
+            log.info("AI 原始返回:{}", aiJson);
+            throw new BusinessException("AI 生成的题目格式有误，请重试");
+        }
+    }
     /**
      * 调用 DeepSeek 聊天接口 （OpenAI 兼容格式）
      */
@@ -110,8 +153,15 @@ public class AiServiceImpl implements AiService {
             if(!(choiceObj instanceof List<?> choices) || choices.isEmpty()){
                 throw new BusinessException("AI 返回异常");
             }
-            Object messageObj = ((Map<?, ?>)choices.get(0)).get("message");
-            return messageObj == null ? "" : messageObj.toString();
+            if(choices.get(0) instanceof Map<?, ?> firstChoice
+                    && firstChoice.get("message") instanceof Map<?, ?> messageMap) {
+                Object contentObj = messageMap.get("content");
+
+                if (contentObj instanceof String content && !content.isBlank()) {
+                    return content;
+                }
+            }
+            throw new BusinessException("AI 返回异常");
         } catch (Exception e) {
             throw new BusinessException("AI 服务调用失败：" + e.getMessage());
         }
