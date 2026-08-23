@@ -4,6 +4,7 @@ package com.ai.learning.service.impl;
 import com.ai.learning.VO.AnswerResultVO;
 import com.ai.learning.VO.AnswerStatsVO;
 import com.ai.learning.VO.WrongQuestionVO;
+import com.ai.learning.annotation.RateLimit;
 import com.ai.learning.common.BusinessException;
 import com.ai.learning.dto.AnswerSubmitDTO;
 import com.ai.learning.entity.AnswerRecord;
@@ -42,14 +43,9 @@ public class AnswerServiceImpl implements AnswerService {
      */
     @Override
     @Transactional
+    @RateLimit(business = "answer")
     public AnswerResultVO submit(AnswerSubmitDTO dto,Long userId){
-        //三层防护： 黑名单 -> 限流 -> 防重（顺序，先检查重的）
-        if(rateLimitService.isBlocked(userId)){
-            throw new BusinessException("账号已被临时限制，请明天再试");
-        }
-        if(!rateLimitService.tryLimit(userId, 30 , Duration.ofSeconds(60))){
-            throw new BusinessException("操作太频繁，请稍后再试");
-        }
+
         if(!rateLimitService.tryDedup(userId, dto.getQuestionId(), Duration.ofSeconds(2))){
             throw new BusinessException("提交过于频繁，请稍后再试");
         }

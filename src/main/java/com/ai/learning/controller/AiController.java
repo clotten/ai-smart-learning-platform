@@ -2,10 +2,13 @@ package com.ai.learning.controller;
 
 
 import com.ai.learning.VO.AiExplainVO;
+import com.ai.learning.common.BusinessException;
 import com.ai.learning.common.Result;
 import com.ai.learning.dto.AiExplainDTO;
 import com.ai.learning.entity.Question;
 import com.ai.learning.service.AiService;
+import com.ai.learning.service.RateLimitService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 @Slf4j
@@ -28,6 +33,8 @@ public class AiController {
 
     //流式调用耗时，使用线程池异步执行（不阻塞Tomcat）
     private final Executor aiExecutor;
+    private final RateLimitService rateLimitService;
+    private final ObjectMapper objectMapper;
 
     @Operation(summary = "AI 讲解错题")
     @PostMapping("/explain")
@@ -67,6 +74,37 @@ public class AiController {
                 emitter.completeWithError(e);
             }
         });
+        return emitter;
+    }
+
+    @Operation(summary = "AI 自由对话（流式）")
+    @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chat(
+            @Parameter(description = "用户消息") @RequestParam String message,
+            HttpServletRequest request
+    ){
+        SseEmitter emitter = new SseEmitter(120_000L);
+        // 从 token 拿用户身份
+        Object userId = request.getAttribute("userId");
+        //Ai 限流：每个用户一分钟最多5次
+        if(!rateLimitService.tryLimit("ai",Long.valueOf(userId.toString()))){
+            try{
+                emitter.send(objectMapper.writeValueAsString(Map.of("error","AI调用太频繁，请稍后再试")));
+            } catch (Exception e) {
+                log.error("推送错误事件失败",e);
+            }
+            emitter.complete();
+            return emitter;
+        }
+        aiExecutor.execute(
+                () -> {
+                    try{
+                        aiService.chatStream(message,emitter);
+                    } catch (Exception e) {
+                        emitter.completeWithError(e);
+                    }
+                }
+        );
         return emitter;
     }
 }

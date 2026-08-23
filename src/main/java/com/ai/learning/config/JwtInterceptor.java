@@ -1,6 +1,7 @@
 package com.ai.learning.config;
 
 import com.ai.learning.common.BusinessException;
+import com.ai.learning.service.RateLimitService;
 import  com.ai.learning.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,8 @@ public class JwtInterceptor implements HandlerInterceptor{
 
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private RateLimitService rateLimitService;
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @Nullable Object handler){
@@ -41,6 +44,11 @@ public class JwtInterceptor implements HandlerInterceptor{
         request.setAttribute("userId",claims.getSubject());
         request.setAttribute("username",claims.get("username"));
         request.setAttribute("role",claims.get("role"));
+        // 验签通过后、放行前：黑名单检查（所有请求统一过闸）
+        Long userId = Long.valueOf(claims.getSubject());
+        if(rateLimitService.isBlocked(userId)){
+            throw new BusinessException("账号已被临时限制，请明天再试");
+        }
         return true;//校验通过，放行
     }
 }

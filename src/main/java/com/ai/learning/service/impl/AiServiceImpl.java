@@ -48,17 +48,18 @@ public class AiServiceImpl implements AiService {
     private RestClient restClient;
 
     @PostConstruct
-    public void init(){     // Spring 初始化完这个 Bean 后自动调用
+    public void init() {     // Spring 初始化完这个 Bean 后自动调用
         restClient = RestClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + apiKey)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
     }
+
     @Override
-    public AiExplainVO explainWrongQuestion(AiExplainDTO dto, Long userId){
+    public AiExplainVO explainWrongQuestion(AiExplainDTO dto, Long userId) {
         //1.查题目
         Question question = questionMapper.selectById(dto.getQuestionId());
-        if(question == null){
+        if (question == null) {
             throw new BusinessException("题目不存在");
         }
 
@@ -74,7 +75,7 @@ public class AiServiceImpl implements AiService {
                                 题目：%s
                                 正确答案：%s
                                 学生答案：%s
-                """.formatted(question.getContent(),question.getAnswer(),dto.getUserAnswer());
+                """.formatted(question.getContent(), question.getAnswer(), dto.getUserAnswer());
 
         //3.调 DeepSeek API
         String aiExplain = callDeepSeek(prompt);
@@ -90,7 +91,7 @@ public class AiServiceImpl implements AiService {
     }
 
     @Override
-    public Question generateQuestion(String category, Integer type){
+    public Question generateQuestion(String category, Integer type) {
         //1.设计Prompt：明确要求只输出JSON
         String prompt = """
                 请生成一道%s题目，要求：
@@ -99,14 +100,14 @@ public class AiServiceImpl implements AiService {
                             3. JSON 格式必须是：{"type":%d,"category":"%s","content":"题干","options":"选项JSON","answer":"正确答案","analysis":"解析","difficulty":1-5(取整数)}
                             4. options 格式：{"A":"选项A","B":"选项B","C":"选项C","D":"选项D"}，判断题 options 为 null
                             5. 答案必须真实正确
-                """.formatted(category,type == 1 ? "单选题" : (type == 2 ? "多选题" : "判断题"), type, category);
+                """.formatted(category, type == 1 ? "单选题" : (type == 2 ? "多选题" : "判断题"), type, category);
 
         //2.调AI
         String aiJson = callDeepSeek(prompt);
 
         //3.解析JSON -> Question （AI可能加```json```代码块，先清理）
-        try{
-            String clean = aiJson.replace("```json","").replace("```","").trim();
+        try {
+            String clean = aiJson.replace("```json", "").replace("```", "").trim();
             JsonNode node = objectMapper.readTree(clean);
 
             Question q = new Question();
@@ -115,7 +116,7 @@ public class AiServiceImpl implements AiService {
             q.setContent(node.get("content").asText());
             //options 统一处理：字符串直接用，对象转成JSON字符串
             JsonNode optionsNode = node.get("options");
-            if(optionsNode != null && !optionsNode.isNull()){
+            if (optionsNode != null && !optionsNode.isNull()) {
                 q.setOptions(optionsNode.isTextual() ? optionsNode.asText() : optionsNode.toString());
             }
             q.setAnswer(node.get("answer").asText());
@@ -127,38 +128,39 @@ public class AiServiceImpl implements AiService {
             throw new BusinessException("AI 生成的题目格式有误，请重试");
         }
     }
+
     /**
      * 调用 DeepSeek 聊天接口 （OpenAI 兼容格式）
      */
-    private String callDeepSeek(String prompt){
-        try{
+    private String callDeepSeek(String prompt) {
+        try {
             //请求体（OpenAi兼容）
             Map<String, Object> body = Map.of(
                     "model", model,
                     "messages", List.of(
-                            Map.of("role","system","content","你是专业的编程辅导老师"),
-                            Map.of("role","user","content",prompt)
+                            Map.of("role", "system", "content", "你是专业的编程辅导老师"),
+                            Map.of("role", "user", "content", prompt)
                     ),
                     "temperature", 0.7
             );
 
             //发请求
-            Map<?,?> response = restClient.post()
+            Map<?, ?> response = restClient.post()
                     .uri("/chat/completions")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
                     .body(Map.class);
 
-            if(response == null){
+            if (response == null) {
                 throw new BusinessException("AI 返回异常");
             }
             //解析响应：choices[0].message.content
             Object choiceObj = response.get("choices");
-            if(!(choiceObj instanceof List<?> choices) || choices.isEmpty()){
+            if (!(choiceObj instanceof List<?> choices) || choices.isEmpty()) {
                 throw new BusinessException("AI 返回异常");
             }
-            if(choices.get(0) instanceof Map<?, ?> firstChoice
+            if (choices.get(0) instanceof Map<?, ?> firstChoice
                     && firstChoice.get("message") instanceof Map<?, ?> messageMap) {
                 Object contentObj = messageMap.get("content");
 
@@ -173,41 +175,62 @@ public class AiServiceImpl implements AiService {
     }
 
     @Override
-    public void explainStream(AiExplainDTO dto, Long userId, SseEmitter emitter){
+    public void explainStream(AiExplainDTO dto, Long userId, SseEmitter emitter) {
         Question question = questionMapper.selectById(dto.getQuestionId());
-        if(question == null){
+        if (question == null) {
             throw new BusinessException("题目不存在");
         }
 
-        String prompt= """
+        String prompt = """
                 你是一位耐心的编程辅导老师。
                             请帮学生讲解这道错题，要求简洁易懂，200字以内。
                 
                             题目：%s
                             正确答案：%s
                             学生答案：%s
-                """.formatted(question.getContent(),question.getAnswer(),dto.getUserAnswer());
+                """.formatted(question.getContent(), question.getAnswer(), dto.getUserAnswer());
 
-        try{
-            //请求体加 stream：true —— 开启流式
-            Map<String, Object> body = Map.of(
-                    "model", model,
-                    "messages", List.of(
-                            Map.of("role","system","content","你是专业的编程辅导老师"),
-                            Map.of("role","user","content",prompt)
-                    ),
-                    "temperature", 0.7,
-                    "stream", true
-            );
+        //请求体加 stream：true —— 开启流式
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "messages", List.of(
+                        Map.of("role", "system", "content", "你是专业的编程辅导老师"),
+                        Map.of("role", "user", "content", prompt)
+                ),
+                "temperature", 0.7,
+                "stream", true
+        );
+        StreamDeepSeek(body, emitter); //公共方法调用
 
+
+    }
+
+    @Override
+    public void chatStream(String userMessage, SseEmitter emitter){
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "messages", List.of(
+                        Map.of("role","system","content","你是AI智能学习平台的编程学习助手，用简介中文回答"),
+                        Map.of("role", "user", "content", userMessage)
+                ),
+                "temperature", 0.7,
+                "stream", true
+        );
+        StreamDeepSeek(body, emitter);
+    }
+    /**
+     * 公共流式调用： 调DeepSeek 并逐段推给前端
+     */
+    private void StreamDeepSeek(Map<String, Object> body, SseEmitter emitter) {
+        try {
             //流式读取DeepSeek响应，边读边推给前端
             restClient.post()
                     .uri("/chat/completions")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
-                    .exchange((request,response) ->{
+                    .exchange((request, response) -> {
                         //逐行读取SSE数据流  try-with-resources:读完自动关闭BufferedReader（连带低层流）
-                        try(BufferedReader reader = new BufferedReader(
+                        try (BufferedReader reader = new BufferedReader(
                                 new InputStreamReader(response.getBody(), StandardCharsets.UTF_8)
                         )) {
                             String line;
@@ -220,7 +243,7 @@ public class AiServiceImpl implements AiService {
                                 JsonNode node = objectMapper.readTree(data);
                                 JsonNode choicesNode = node.path("choices");
                                 //choices为空直接跳过
-                                if(choicesNode.isEmpty()) continue;
+                                if (choicesNode.isEmpty()) continue;
                                 JsonNode delta = choicesNode.path(0).path("delta").path("content");
                                 if (delta.isTextual() && !delta.asText().isEmpty()) {
                                     //包装成json使得apiFox能够自动合并
@@ -235,7 +258,7 @@ public class AiServiceImpl implements AiService {
                         return null;
                     });
         } catch (Exception e) {
-            emitter.completeWithError(e);   //出错告诉前端
+            emitter.completeWithError(e); //出错告诉前端
         }
     }
 }

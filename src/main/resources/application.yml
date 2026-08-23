@@ -49,6 +49,18 @@ app:
   deepseek:
     base-url: https://api.deepseek.com
     model: deepseek-chat
+
+  rate-limit:
+    ai:                   #AI对话流
+      max: 5
+      window-seconds: 60
+    answer:               #答题限流
+      max: 30
+      windows-seconds: 60
+    blacklist:            #黑名单规则
+      violation: 3        #窗口内触发限流几次拉黑
+      window-seconds: 3600 #违规计数窗口
+      ban-days: 1         #拉黑天数
 # ===== Swagger 接口文档 =====
 # 安全策略：默认关闭（生产环境绝不暴露），local 环境在 application-local.yml 里开启
 springdoc:

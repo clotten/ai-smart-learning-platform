@@ -40,16 +40,19 @@ async function handleLogin(){
   try {
     const res = await login(form.value)
     if(res.code === 200){
-      //登陆成功 -> 保存token 到本地
       userStore.setLogin(res.data.token, res.data)
       ElMessage.success('登陆成功')
-      router.push('/')  //跳转到首页
+      router.push('/')
     }else{
       ElMessage.error(res.message)
     }
-  }finally {
+  } catch (err) {
+    // 注意：request.js拦截器已经弹过错误提示了，这里不要再重复弹窗
+    console.error('登录失败', err)
+  } finally {
     loading.value = false
   }
+
 }
 </script>
 

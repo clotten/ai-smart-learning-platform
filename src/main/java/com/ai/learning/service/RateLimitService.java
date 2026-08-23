@@ -1,5 +1,6 @@
 package com.ai.learning.service;
 
+import com.ai.learning.config.RateLimitProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -16,6 +17,7 @@ import java.time.Duration;
 public class RateLimitService {
 
     private final StringRedisTemplate redisTemplate;
+    private final RateLimitProperties properties;
 
     //key 前缀集中管理（规范）
     private static final String DEDUP_KEY = "learn:dedup:answer:";
@@ -24,7 +26,16 @@ public class RateLimitService {
     private static final String BLACKLIST_KEY ="learn:blacklist:user:";
 
     /**
-     * 1.f防重：同一用户同一题 ttl 内只算一次
+     * 按业务名取配置
+     */
+    private RateLimitProperties.RateConfig getRateCongig(String business){
+        if("ai".equals(business)) return properties.getAi();
+        if("answer".equals(business)) return properties.getAnswer();
+        return new RateLimitProperties.RateConfig(30, 60); //默认
+    }
+
+    /**
+     * 防重：同一用户同一题 ttl 内只算一次
      */
     public boolean tryDedup(Long userId, Long questionId, Duration ttl){
         try{
@@ -39,11 +50,19 @@ public class RateLimitService {
     }
 
     /**
-     * 2.限流：固定窗口计数，window内最多max次
+     * 限流：参数从配置读（按业务名）
      */
-    public boolean tryLimit(Long userId, int max, Duration window){
+    public boolean tryLimit(String business, Long userId){
+        RateLimitProperties.RateConfig cfg = getRateCongig(business);
+        return tryLimit(business, userId, cfg.getMax(), Duration.ofSeconds(cfg.getWindowSeconds()));
+    }
+    /**
+     * 限流：固定窗口计数，window内最多max次,手动指定参数（特殊场景用）
+     */
+    public boolean tryLimit(String business,Long userId, int max, Duration window){
         try{
-            String key = LIMIT_KEY + userId;
+            // key = learn:limit:user:answer:1  /  learn:limit:user:ai:1  ← 互不干扰！
+            String key = LIMIT_KEY + business + ":" + userId;
             Long count = redisTemplate.opsForValue().increment(key);
             if(count != null && count ==1){
                 redisTemplate.expire(key, window); //第一个请求开始计时
@@ -60,17 +79,21 @@ public class RateLimitService {
     }
 
     /**
-     * 违规累计：一小时内超限 3 次 -> 拉黑 1 天
+     * 违规累计 + 拉黑（参数从配置读）
      */
     private void addViolation(Long userId){
         String key = VIOLATION_KEY + userId;
         Long v = redisTemplate.opsForValue().increment(key);
         if(v != null && v == 1){
-            redisTemplate.expire(key, Duration.ofHours(1));
+            redisTemplate.expire(key, Duration.ofSeconds(properties.getBlacklist().getWindowsSeconds()));
         }
-        if(v != null && v >= 3){
-            redisTemplate.opsForValue().set(BLACKLIST_KEY + userId, "1", Duration.ofDays(1));
-            log.warn("用户 {} 一小时超限3次，拉黑1天",userId);
+        if(v != null && v >= properties.getBlacklist().getViolations()){
+            redisTemplate.opsForValue().set(
+                    BLACKLIST_KEY + userId, "1",
+                    Duration.ofDays(properties.getBlacklist().getBanDays()));
+            log.warn("用户 {} 一小时超限 {} 次，拉黑 {} 天", userId,
+                    properties.getBlacklist().getViolations(),
+                    properties.getBlacklist().getBanDays());
         }
     }
 

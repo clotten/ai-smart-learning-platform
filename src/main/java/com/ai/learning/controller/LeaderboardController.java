@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/api/leaderboard")
 public class LeaderboardController {
 
-    private final LeaderboardService leadboardService;
     private final LeaderboardService leaderboardService;
 
     @Operation(summary = "刷题排行榜 TOP10")
@@ -34,7 +33,7 @@ public class LeaderboardController {
     @GetMapping("/me")
     public Result<LeaderboardVO> myRank(HttpServletRequest request){
         Object userId = request.getAttribute("userId");
-        return Result.success(leadboardService.myRank(Long.valueOf(userId.toString())));
+        return Result.success(leaderboardService.myRank(Long.valueOf(userId.toString())));
     }
 
 }

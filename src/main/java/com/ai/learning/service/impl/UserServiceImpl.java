@@ -3,9 +3,11 @@ package com.ai.learning.service.impl;
 import com.ai.learning.common.BusinessException;
 import com.ai.learning.entity.SysUser;
 import com.ai.learning.mapper.SysUserMapper;
+import com.ai.learning.service.RateLimitService;
 import com.ai.learning.service.UserService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,10 +18,12 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService{
 
-    @Autowired
-    private SysUserMapper userMapper;
+
+    private final SysUserMapper userMapper;
+    private final RateLimitService rateLimitService;
 
     //Bcrypto加密器（spring-security-crypto提供）
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -50,6 +54,10 @@ public class UserServiceImpl implements UserService{
                 new QueryWrapper<SysUser>().eq("username",username));
         if(user == null){
             throw new BusinessException("用户名不存在");
+        }
+        //  黑名单检查：按查到的用户 id（被限制的直接拒绝登录）
+        if (rateLimitService.isBlocked(user.getId())) {
+            throw new BusinessException("账号已被临时限制，请明天再试");
         }
         //2.比对密码（matches = 把明文再加密一次和库里密文比）
         if(!encoder.matches(password,user.getPassword())){

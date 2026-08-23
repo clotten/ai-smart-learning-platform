@@ -20,4 +20,9 @@ public interface AiService {
      * AI 讲解错题（流式 ：边生成边推给前端）
      */
     void explainStream(AiExplainDTO dto, Long userId, SseEmitter emitter);
+
+    /**
+     * AI 自由对话（流式）
+     */
+    void chatStream(String userMessage, SseEmitter emitter);
 }
