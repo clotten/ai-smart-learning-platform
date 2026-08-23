@@ -17,7 +17,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +31,8 @@ import java.util.Map;
 public class AiServiceImpl implements AiService {
 
     private final QuestionMapper questionMapper;
+
+    private final ObjectMapper objectMapper;
 
     //配置注入（key 在 application-local.yml）
     @Value("${app.deepseek.api-key}")
@@ -101,8 +107,7 @@ public class AiServiceImpl implements AiService {
         //3.解析JSON -> Question （AI可能加```json```代码块，先清理）
         try{
             String clean = aiJson.replace("```json","").replace("```","").trim();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(clean);
+            JsonNode node = objectMapper.readTree(clean);
 
             Question q = new Question();
             q.setType(node.get("type").asInt());
@@ -164,6 +169,73 @@ public class AiServiceImpl implements AiService {
             throw new BusinessException("AI 返回异常");
         } catch (Exception e) {
             throw new BusinessException("AI 服务调用失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void explainStream(AiExplainDTO dto, Long userId, SseEmitter emitter){
+        Question question = questionMapper.selectById(dto.getQuestionId());
+        if(question == null){
+            throw new BusinessException("题目不存在");
+        }
+
+        String prompt= """
+                你是一位耐心的编程辅导老师。
+                            请帮学生讲解这道错题，要求简洁易懂，200字以内。
+                
+                            题目：%s
+                            正确答案：%s
+                            学生答案：%s
+                """.formatted(question.getContent(),question.getAnswer(),dto.getUserAnswer());
+
+        try{
+            //请求体加 stream：true —— 开启流式
+            Map<String, Object> body = Map.of(
+                    "model", model,
+                    "messages", List.of(
+                            Map.of("role","system","content","你是专业的编程辅导老师"),
+                            Map.of("role","user","content",prompt)
+                    ),
+                    "temperature", 0.7,
+                    "stream", true
+            );
+
+            //流式读取DeepSeek响应，边读边推给前端
+            restClient.post()
+                    .uri("/chat/completions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .exchange((request,response) ->{
+                        //逐行读取SSE数据流  try-with-resources:读完自动关闭BufferedReader（连带低层流）
+                        try(BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(response.getBody(), StandardCharsets.UTF_8)
+                        )) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                if (!line.startsWith("data:")) continue; //只处理 data: 行
+                                String data = line.substring(5).trim();
+                                if ("[DONE]".equals(data)) break;    //结束标记
+
+                                //取delta.content(每一小段)
+                                JsonNode node = objectMapper.readTree(data);
+                                JsonNode choicesNode = node.path("choices");
+                                //choices为空直接跳过
+                                if(choicesNode.isEmpty()) continue;
+                                JsonNode delta = choicesNode.path(0).path("delta").path("content");
+                                if (delta.isTextual() && !delta.asText().isEmpty()) {
+                                    //包装成json使得apiFox能够自动合并
+                                    Map<String, String> wrap = Map.of("content", delta.asText());
+                                    emitter.send(objectMapper.writeValueAsString(wrap)); //推给前端,自动转义引号/换行
+                                }
+                            }
+                            emitter.complete(); //全部推完
+                        } catch (Exception e) {
+                            emitter.completeWithError(e); //出错告诉前端
+                        }
+                        return null;
+                    });
+        } catch (Exception e) {
+            emitter.completeWithError(e);   //出错告诉前端
         }
     }
 }
