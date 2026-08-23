@@ -24,6 +24,11 @@ uploads/
 tmp/
 temp/
 
+# ===== Node / 前端 =====
+node_modules/
+dist/
+*.local
+
 # ===== 系统 =====
 .DS_Store
 Thumbs.db
