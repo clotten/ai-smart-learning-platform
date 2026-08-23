@@ -11,6 +11,7 @@ import com.ai.learning.entity.Question;
 import com.ai.learning.mapper.AnswerRecordMapper;
 import com.ai.learning.mapper.QuestionMapper;
 import com.ai.learning.service.AnswerService;
+import com.ai.learning.service.RateLimitService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +34,8 @@ public class AnswerServiceImpl implements AnswerService {
     private final QuestionMapper questionMapper;
     private final AnswerRecordMapper answerRecordMapper;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private final RateLimitService rateLimitService;
+
     /**
      * 提交答案：判分 + 存记录
      * Transactional:记录插入（和以后可能的统计更新）要么全成、要么全回滚
@@ -39,6 +43,17 @@ public class AnswerServiceImpl implements AnswerService {
     @Override
     @Transactional
     public AnswerResultVO submit(AnswerSubmitDTO dto,Long userId){
+        //三层防护： 黑名单 -> 限流 -> 防重（顺序，先检查重的）
+        if(rateLimitService.isBlocked(userId)){
+            throw new BusinessException("账号已被临时限制，请明天再试");
+        }
+        if(!rateLimitService.tryLimit(userId, 30 , Duration.ofSeconds(60))){
+            throw new BusinessException("操作太频繁，请稍后再试");
+        }
+        if(!rateLimitService.tryDedup(userId, dto.getQuestionId(), Duration.ofSeconds(2))){
+            throw new BusinessException("提交过于频繁，请稍后再试");
+        }
+
         //1.查题目（不存在报错）
         Question question = questionMapper.selectById(dto.getQuestionId());
         if(question == null){
