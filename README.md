@@ -99,7 +99,16 @@ mvn test
 - [x] 模块三：刷题 + 错题本
 - [x] 模块四：Redis 缓存 + 排行榜
 - [x] 模块五：AI 出题 / 讲题（DeepSeek）
-- [ ] 模块六：Vue3 前端 + 部署上线（开发中）
+- [x] 模块六：Vue3 前端 + 部署上线 ✅
+
+## 🚀 部署
+
+生产环境：Ubuntu 24.04 + Nginx + systemd，手动部署（无宝塔）。
+
+- 前端：`npm run build` → `dist/` 放到 Nginx 根目录
+- 后端：`mvn package` → jar + `application-prod.yml`（外部配置覆盖，无需重新打包）
+- Nginx：静态文件 + `/api` 反代 8081 + SSE 关缓冲（`proxy_buffering off`）
+- 后端守护：systemd 服务（开机自启 + 崩溃自动重启）
 
 ## 📄 License
 
