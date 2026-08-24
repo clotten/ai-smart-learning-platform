@@ -5,6 +5,7 @@ import com.ai.learning.VO.AiExplainVO;
 import com.ai.learning.common.BusinessException;
 import com.ai.learning.common.Result;
 import com.ai.learning.dto.AiExplainDTO;
+import com.ai.learning.dto.ChatDTO;
 import com.ai.learning.entity.Question;
 import com.ai.learning.service.AiService;
 import com.ai.learning.service.RateLimitService;
@@ -78,9 +79,9 @@ public class AiController {
     }
 
     @Operation(summary = "AI 自由对话（流式）")
-    @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
-            @Parameter(description = "用户消息") @RequestParam String message,
+            @Parameter(description = "用户消息") @RequestBody ChatDTO dto,
             HttpServletRequest request
     ){
         SseEmitter emitter = new SseEmitter(120_000L);
@@ -99,7 +100,7 @@ public class AiController {
         aiExecutor.execute(
                 () -> {
                     try{
-                        aiService.chatStream(message,emitter);
+                        aiService.chatStream(dto.getMessage(),emitter);
                     } catch (Exception e) {
                         emitter.completeWithError(e);
                     }

@@ -35,9 +35,23 @@ function rankStyle(i) {
 }
 
 onMounted(async () => {
-  const res = await getTop(10)
-  if (res.code === 200) list.value = res.data
-  const r = await getMyRank()
-  if (r.code === 200) myRank.value = r.data
+    //两个请求同时发送,每个接口各自捕获异常，错误不会影响其他接口
+    const [topRes, myRankRes] = await Promise.all([
+      getTop(10).catch(
+          e => {
+            console.error('榜单加载失败',e)
+            return null
+          }
+      ),
+      getMyRank().catch(e => {
+        console.error('个人排名加载失败',e)
+        return null
+      })
+    ])
+
+    if (topRes.code === 200) list.value = topRes.data
+
+    if (myRankRes.code === 200) myRank.value = myRankRes.data
+
 })
 </script>

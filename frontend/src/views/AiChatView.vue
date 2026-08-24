@@ -15,6 +15,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { ElMessage} from "element-plus";
 
 const messages = ref([])
 const input = ref('')
@@ -22,7 +23,12 @@ const loading = ref(false)
 
 async function send() {
   const text = input.value.trim()
-  if (!text || loading.value) return
+
+  if(!text){
+    ElMessage.warning('请输入内容')     //空消息提示
+    return
+  }
+  if (loading.value) return    // 防重复发送
   input.value = ''
   messages.value.push({ role: 'user', content: text })
   loading.value = true
@@ -32,8 +38,13 @@ async function send() {
   let aiText = ''
   try {
     // 用 fetch 流式读取（EventSource 不能带 Authorization 头）
-    const resp = await fetch(`/api/ai/chat?message=${encodeURIComponent(text)}`, {
-      headers: { Authorization: 'Bearer ' + token }
+    const resp = await fetch(`/api/ai/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({ message: text })
     })
     //非 200 响应 → 解析错误信息并抛出（让 catch 显示出来）
     if (!resp.ok) {

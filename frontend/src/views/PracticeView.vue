@@ -80,22 +80,30 @@ function parseOptions(str) {
 }
 
 async function loadData() {
-  const res = await pageQuestions(query)
-  if (res.code === 200) {
-    list.value = res.data.records
-    total.value = res.data.total
+  try {
+    const res = await pageQuestions(query)
+    if (res.code === 200) {
+      list.value = res.data.records
+      total.value = res.data.total
+    }
+  } catch (err) {
+    console.error('加载题目失败', err)
   }
 }
 
 async function handleSubmit(q) {
   // 多选题：把选中的 key 拼成字符串（"AB"），后端会自动归一化排序
-  const answer = Array.isArray(answers[q.id]) ? answers[q.id].join('') : answers[q.id]
-  const res = await submitAnswer({ questionId: q.id, userAnswer: answer })
-  if (res.code === 200) {
-    results[q.id] = res.data
-    loadStats()
-  } else {
-    ElMessage.error(res.message)
+  try {
+    const answer = Array.isArray(answers[q.id]) ? answers[q.id].join('') : answers[q.id]
+    const res = await submitAnswer({ questionId: q.id, userAnswer: answer })
+    if (res.code === 200) {
+      results[q.id] = res.data
+      loadStats()
+    } else {
+      ElMessage.error(res.message)
+    }
+  } catch (err) {
+    console.error('提交答案失败', err)
   }
 }
 
@@ -109,14 +117,20 @@ async function handleAiExplain(q) {
     } else {
       ElMessage.error(res.message)
     }
+  } catch (err) {
+    console.error('AI讲解失败', err)
   } finally {
     aiLoading[q.id] = false
   }
 }
 
 async function loadStats() {
-  const res = await getStats()
-  if (res.code === 200) stats.value = res.data
+  try {
+    const res = await getStats()
+    if (res.code === 200) stats.value = res.data
+  } catch (err) {
+    console.error('加载统计失败', err)
+  }
 }
 
 onMounted(() => { loadData(); loadStats() })
