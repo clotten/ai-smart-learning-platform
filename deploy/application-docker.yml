@@ -1,0 +1,30 @@
+# Docker 环境的后端配置（数据库连接被 docker-compose 环境变量覆盖）
+server:
+  port: 8081
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/ai_learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+app:
+  jwt:
+    secret: 从.env的JWT_SECRET注入          # 占位符！真实值由 compose 环境变量覆盖
+    expire-minutes: 1440
+  deepseek:
+    api-key: 从.env的DEEPSEEK_API_KEY注入    # 占位符！真实值由 compose 环境变量覆盖
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+  rate-limit:
+    ai: { max: 5, window-seconds: 60 }
+    answer: { max: 30, window-seconds: 60 }
+
+springdoc:
+  swagger-ui: { enabled: false }
+  api-docs: { enabled: false }

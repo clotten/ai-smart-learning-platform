@@ -29,6 +29,10 @@ node_modules/
 dist/
 *.local
 
+# ===== Docker 环境变量（含真实密钥，绝不上传！）=====
+.env
+.env.*
+
 # ===== 系统 =====
 .DS_Store
 Thumbs.db

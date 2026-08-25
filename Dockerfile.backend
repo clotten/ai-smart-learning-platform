@@ -1,0 +1,16 @@
+# ============================================
+# 后端镜像：JDK17 运行环境 + jar
+# 用法: docker build -f Dockerfile.backend -t learn-backend .
+# ============================================
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+# 拷贝打包好的 jar 和外部配置
+COPY target/learning-platform-0.0.1-SNAPSHOT.jar app.jar
+COPY deploy/application-docker.yml application-docker.yml
+
+EXPOSE 8081
+
+# 启动：数据库密码/Redis 地址等由 docker-compose 的环境变量覆盖
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]

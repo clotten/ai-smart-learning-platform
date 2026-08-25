@@ -1,0 +1,66 @@
+# ============================================
+# Docker Compose：一键启动全家（MySQL + Redis + 后端 + 前端）
+# 用法: docker compose up -d --build
+# ============================================
+services:
+
+  # ---------- 数据库 ----------
+  mysql:
+    image: mysql:8.0
+    container_name: learn-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ai_learning_platform
+    volumes:
+      - mysql-data:/var/lib/mysql                    # 数据持久化（容器删了数据还在）
+      - ./deploy/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # 首次启动自动建表
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 5s
+      retries: 10
+
+  # ---------- 缓存 ----------
+  redis:
+    image: redis:7-alpine
+    container_name: learn-redis
+    ports:
+      - "6379:6379"
+
+  # ---------- 后端 ----------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: learn-backend
+    depends_on:
+      mysql:
+        condition: service_healthy      # 等 MySQL 就绪再启动
+      redis:
+        condition: service_started
+    environment:
+      # ★ 环境变量覆盖配置文件（密钥从 .env 读取，不写死在文件里！）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ai_learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-root123}
+      SPRING_DATA_REDIS_HOST: redis
+      APP_DEEPSEEK_APIKEY: ${DEEPSEEK_API_KEY}      # 从 .env 读取
+      APP_JWT_SECRET: ${JWT_SECRET}                 # 从 .env 读取
+    ports:
+      - "8081:8081"
+
+  # ---------- 前端 ----------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: learn-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+# 数据卷：MySQL 数据持久化
+volumes:
+  mysql-data:
