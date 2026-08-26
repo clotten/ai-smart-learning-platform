@@ -1,3 +1,7 @@
+# ============================================
+# 公共配置（零敏感信息，可安全上传 GitHub）
+# 敏感配置（密码/密钥）在 application-local.yml / .env
+# ============================================
 server:
   port: 8081
 
@@ -5,28 +9,23 @@ spring:
   application:
     name: learning-platform
 
-  # 默认激活 local 环境：本地敏感配置在 application-local.yml（已被 gitignore，不上传）
+  # 默认激活 local 环境（敏感配置在 application-local.yml，已 gitignore）
   profiles:
     active: local
 
-  # ===== 数据库配置（MySQL 8）=====
-  # 注意：用户名/密码在 application-local.yml，本文件不含任何敏感信息，可安全上传 GitHub
+  # ===== 数据库（用户名/密码在 local）=====
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
 
-  # ===== Redis 配置（Day4 装好 Redis 后生效）=====
+  # ===== Redis =====
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
 
-  # 统一 JSON 时间格式
-  jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: Asia/Shanghai
-
+  # ===== 邮件 SMTP（账号密码在 local）=====
   mail:
     host: smtp.qq.com
     port: 587
@@ -37,42 +36,43 @@ spring:
           starttls:
             enable: true
 
-# ===== MyBatis-Plus 配置 =====
+  # ===== JSON 时间格式 =====
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# ===== MyBatis-Plus =====
 mybatis-plus:
   configuration:
-    # 数据库下划线字段 -> Java 驼峰属性
-    map-underscore-to-camel-case: true
-    # 控制台打印 SQL（开发期方便看）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true   # 下划线 -> 驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开发期打印 SQL
   global-config:
     db-config:
-      # 逻辑删除：deleted 字段 0=未删 1=已删
-      logic-delete-field: deleted
+      logic-delete-field: deleted        # 逻辑删除
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# ===== 自定义配置：JWT =====
+# ===== 自定义配置 =====
 app:
   jwt:
-    # 签名密钥在 application-local.yml（敏感信息不上传），token 有效期如下
-    expire-minutes: 1440
+    expire-minutes: 1440                 # 密钥在 local
   deepseek:
     base-url: https://api.deepseek.com
     model: deepseek-chat
   rate-limit:
-    ai:                   #AI对话流
+    ai:                                  # AI 对话限流
       max: 5
       window-seconds: 60
-    answer:               #答题限流
+    answer:                              # 答题限流
       max: 30
-      windows-seconds: 60
-    blacklist:            #黑名单规则
-      violation: 3        #窗口内触发限流几次拉黑
-      window-seconds: 3600 #违规计数窗口
-      ban-days: 1         #拉黑天数
-  frontend-url: http://localhost:5173     # 开发环境
-# ===== Swagger 接口文档 =====
-# 安全策略：默认关闭（生产环境绝不暴露），local 环境在 application-local.yml 里开启
+      window-seconds: 60                 # ★ 修复：windows-seconds → window-seconds
+    blacklist:                           # 黑名单规则
+      violations: 3                      # ★ 修复：violation → violations
+      window-seconds: 3600               # 违规计数窗口（1小时）
+      ban-days: 1                        # 拉黑天数
+  frontend-url: http://localhost:5173    # 前端地址（OAuth 回调跳转用）
+
+# ===== Swagger（生产关闭，local 环境在 application-local.yml 开启）=====
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

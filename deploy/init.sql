@@ -11,13 +11,8 @@
  Target Server Version : 80200 (8.2.0)
  File Encoding         : 65001
 
- Date: 24/08/2026 22:11:03
+ Date: 27/08/2026 02:57:04
 */
-CREATE DATABASE IF NOT EXISTS ai_learning_platform
-  DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_unicode_ci;
-
-USE ai_learning_platform;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -100,8 +95,10 @@ INSERT INTO `question` VALUES (54, 1, 'MySQL', '在MySQL中，关于事务的隔
 DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '用户名',
-  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'BCrypt 加密后的密码',
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '邮箱',
+  `github_id` bigint NULL DEFAULT NULL COMMENT 'GitHub用户ID',
+  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '昵称',
   `role` tinyint NOT NULL DEFAULT 2 COMMENT '角色: 1管理员 2学生',
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '头像地址',
@@ -109,13 +106,19 @@ CREATE TABLE `sys_user`  (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0未删 1已删',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE,
+  UNIQUE INDEX `uk_email`(`email` ASC) USING BTREE,
+  UNIQUE INDEX `uk_github_id`(`github_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'zhangsan', '$2a$10$KCGnnBfrHMA1rMnVAUh8l.XE79IPnTMhn2OY9.V2QsDdj4/KPSayC', NULL, 2, NULL, '2026-08-21 23:48:09', '2026-08-21 23:48:09', 0);
-INSERT INTO `sys_user` VALUES (2, 'lisi', '$2a$10$j0if1oyp5s8GlXVLOgvYfei3ZJR22V9it5E6Ku/KN/iLkP3jTSkSa', NULL, 2, NULL, '2026-08-22 02:56:38', '2026-08-22 02:56:38', 0);
+INSERT INTO `sys_user` VALUES (1, 'zhangsan', NULL, NULL, '$2a$10$KCGnnBfrHMA1rMnVAUh8l.XE79IPnTMhn2OY9.V2QsDdj4/KPSayC', NULL, 2, NULL, '2026-08-21 23:48:09', '2026-08-21 23:48:09', 0);
+INSERT INTO `sys_user` VALUES (2, 'lisi', NULL, NULL, '$2a$10$j0if1oyp5s8GlXVLOgvYfei3ZJR22V9it5E6Ku/KN/iLkP3jTSkSa', NULL, 2, NULL, '2026-08-22 02:56:38', '2026-08-22 02:56:38', 0);
+INSERT INTO `sys_user` VALUES (3, 'clotten', 'clotten@qq.com', NULL, NULL, NULL, 2, NULL, '2026-08-26 22:11:17', '2026-08-26 22:11:17', 0);
+INSERT INTO `sys_user` VALUES (4, '331308387', '331308387@qq.com', NULL, '$2a$10$1BmkFBp92j6flVbo1iLBkeqpqQgRb3338S3zJmlWjGJLcYLWGZSHK', NULL, 2, NULL, '2026-08-26 22:12:20', '2026-08-26 22:12:20', 0);
+INSERT INTO `sys_user` VALUES (6, 'clotten852', NULL, 140622753, NULL, NULL, 2, NULL, '2026-08-27 01:40:08', '2026-08-27 01:40:08', 0);
+INSERT INTO `sys_user` VALUES (7, '3363009478', '3363009478@qq.com', NULL, NULL, NULL, 2, NULL, '2026-08-27 01:47:14', '2026-08-27 01:47:14', 0);
 
 SET FOREIGN_KEY_CHECKS = 1;

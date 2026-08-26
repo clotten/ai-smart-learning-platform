@@ -19,7 +19,7 @@ public class GitHubOAuthService {
     @Value("${app.oauth.github.client-id}")
     private  String clientId;
 
-    @Value("${app.oauth.github.client_secret}")
+    @Value("${app.oauth.github.client-secret}")
     private String clientSecret;
 
     @Value("${app.oauth.github.redirect-uri}")
