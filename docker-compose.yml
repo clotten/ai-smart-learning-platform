@@ -8,6 +8,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: learn-mysql
+    restart: always                       # 开机自启 + 崩溃自动重启
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: ai_learning_platform
@@ -25,6 +26,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: learn-redis
+    restart: always                       # 开机自启 + 崩溃自动重启
     ports:
       - "6379:6379"
 
@@ -34,6 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: learn-backend
+    restart: always                       # 开机自启 + 崩溃自动重启
     depends_on:
       mysql:
         condition: service_healthy      # 等 MySQL 就绪再启动
@@ -56,6 +59,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     container_name: learn-frontend
+    restart: always                       # 开机自启 + 崩溃自动重启
     depends_on:
       - backend
     ports:
