@@ -2,6 +2,7 @@
 # Docker Compose：一键启动全家（MySQL + Redis + 后端 + 前端）
 # 用法: docker compose up -d --build
 # ============================================
+name: learning-platform      # 固定项目名：保证数据卷名字一致（CI/CD 换目录也不丢数据）
 services:
 
   # ---------- 数据库 ----------
