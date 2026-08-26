@@ -12,6 +12,17 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 由SPRING_MAIL_USERNAME注入    # compose 环境变量覆盖
+    password: 由SPRING_MAIL_PASSWORD注入
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 app:
   jwt:
@@ -24,6 +35,14 @@ app:
   rate-limit:
     ai: { max: 5, window-seconds: 60 }
     answer: { max: 30, window-seconds: 60 }
+  smtp:
+    from: 由APP_SMTP_FROM注入               # compose 环境变量覆盖
+  oauth:
+    github:
+      client-id: 由APP_OAUTH_GITHUB_CLIENT_ID注入
+      client-secret: 由APP_OAUTH_GITHUB_CLIENT_SECRET注入
+      redirect-uri: http://192.168.146.102/api/auth/github/callback
+  frontend-url: http://192.168.146.102    # 生产环境
 
 springdoc:
   swagger-ui: { enabled: false }
