@@ -1,16 +1,23 @@
 # ============================================
-# 后端镜像：JDK17 运行环境 + jar
-# 用法: docker build -f Dockerfile.backend -t learn-backend .
+# 后端镜像：多阶段构建
+# 阶段1(maven镜像)编译 jar → 阶段2(jre镜像)只保留运行环境
+# 好处: 服务器/Runner 只需 Docker，不用装 JDK/Maven
 # ============================================
-FROM eclipse-temurin:17-jre
 
+# ---------- 阶段 1：构建 ----------
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY pom.xml .
+# 先拷 pom 下载依赖（利用 Docker 层缓存，改代码不重新下依赖）
+RUN mvn dependency:go-offline -B || true
+COPY src ./src
+RUN mvn package -DskipTests
 
-# 拷贝打包好的 jar 和外部配置
-COPY target/learning-platform-0.0.1-SNAPSHOT.jar app.jar
+# ---------- 阶段 2：运行 ----------
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 COPY deploy/application-docker.yml application-docker.yml
 
 EXPOSE 8081
-
-# 启动：数据库密码/Redis 地址等由 docker-compose 的环境变量覆盖
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]

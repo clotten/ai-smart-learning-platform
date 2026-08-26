@@ -1,0 +1,34 @@
+# ============================================
+# CI/CD 工作流：git push → 自动构建 + 部署
+# 执行者：自托管 Runner（VM 上的 GitHub Actions Runner）
+# ============================================
+name: Deploy
+
+# 触发器：main 分支有 push 时执行
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted          # 跑在虚拟机上的 Runner
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 检查 .env 是否存在（密钥必需）
+        run: |
+          if [ ! -f .env ]; then
+            echo "❌ .env 不存在，无法部署（密钥文件在服务器上，不上传 git）"
+            exit 1
+          fi
+
+      - name: 构建并部署（多阶段 Dockerfile 自动完成构建）
+        run: |
+          docker compose up -d --build
+          docker compose ps
+
+      - name: 健康检查
+        run: |
+          sleep 10
+          curl -s -o /dev/null -w "前端 HTTP %{http_code}\n" http://localhost/ || echo "前端未就绪"
