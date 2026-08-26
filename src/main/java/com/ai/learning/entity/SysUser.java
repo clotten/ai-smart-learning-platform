@@ -18,11 +18,13 @@ public class SysUser {
     @TableId(type = IdType.AUTO) //主键，数据库自增
     private Long id;
 
-    @NotBlank(message = "用户名不能为空")
-    private String username;    //用户名
+    private String email;
 
-    @NotBlank(message = "密码不能为空")
-    private String password;    //BCrypt加密后的密码
+    private Long githubId;      //GitHub 用户 ID（唯一标识，登录凭证）
+
+    private String username;    //用户名,可空(自动生成)
+
+    private String password;    //BCrypt加密后的密码(可空)
 
     private String nickname;    //昵称
 

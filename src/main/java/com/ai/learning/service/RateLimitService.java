@@ -78,6 +78,7 @@ public class RateLimitService {
         }
     }
 
+
     /**
      * 违规累计 + 拉黑（参数从配置读）
      */
@@ -103,4 +104,29 @@ public class RateLimitService {
     public boolean isBlocked(Long userId){
         return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_KEY + userId));
     }
+
+
+
+    /**
+     * 限流：String标识（邮箱/手机号等）
+     */
+    public boolean tryLimit(String business,String identifier, int max, Duration window){
+        try{
+            String key = LIMIT_KEY + business + ":" + identifier;
+            Long count = redisTemplate.opsForValue().increment(key);
+            if(count != null && count ==1){
+                redisTemplate.expire(key, window); //第一个请求开始计时
+            }
+            if(count != null && count > max){
+                addViolation(identifier.hashCode() + 0L);   //触发限流 -> 记一次违规(String版本简单处理）
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("限流Redis异常，降级放行",e);
+            return true;
+        }
+    }
+
+
 }
