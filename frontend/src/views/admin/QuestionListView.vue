@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { pageQuestions, addQuestion, deleteQuestion } from "../api/question.js";
+import { pageQuestions, addQuestion, deleteQuestion } from "../../api/question.js";
 
 const list = ref([])
 const total = ref(0)

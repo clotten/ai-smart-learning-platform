@@ -61,9 +61,9 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { pageQuestions } from '../api/question'
-import { submitAnswer, getStats } from '../api/answer'
-import { aiExplain } from '../api/ai'
+import { pageQuestions } from '../../api/question.js'
+import { submitAnswer, getStats } from '../../api/answer.js'
+import { aiExplain } from '../../api/ai.js'
 
 const list = ref([])
 const total = ref(0)

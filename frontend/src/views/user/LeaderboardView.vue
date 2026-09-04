@@ -22,7 +22,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { getTop, getMyRank } from '../api/leaderboard'
+import { getTop, getMyRank } from '../../api/leaderboard.js'
 
 const list = ref([])
 const myRank = ref(null)

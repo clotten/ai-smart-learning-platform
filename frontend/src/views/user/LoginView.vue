@@ -82,8 +82,8 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login, register, sendCode, loginByCode } from '../api/auth'
-import { useUserStore } from '../stores/user'
+import { login, register, sendCode, loginByCode } from '../../api/auth.js'
+import { useUserStore } from '../../stores/user.js'
 
 const route = useRoute()
 const router = useRouter()

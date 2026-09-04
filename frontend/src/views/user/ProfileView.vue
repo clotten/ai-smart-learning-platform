@@ -57,9 +57,9 @@
 <script setup>
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getMe, updateProfile } from '../api/user'
-import { sendCode, resetPassword } from '../api/auth'
-import { useUserStore } from '../stores/user'
+import { getMe, updateProfile } from '../../api/user.js'
+import { sendCode, resetPassword } from '../../api/auth.js'
+import { useUserStore } from '../../stores/user.js'
 
 const userStore = useUserStore()
 const user = ref({})
