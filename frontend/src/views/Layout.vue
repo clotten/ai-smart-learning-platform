@@ -6,10 +6,14 @@ import { useUserStore} from "../stores/user";
 const router = useRouter()
 const userStore = useUserStore()
 
-function handleLogout(){
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+function handleCommand(cmd) {
+  if (cmd === 'logout') {
+    userStore.logout()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } else if (cmd === 'profile') {
+    router.push('/profile')   // 以后做个人主页
+  }
 }
 </script>
 
@@ -26,8 +30,21 @@ function handleLogout(){
     </el-aside>
     <el-container>
       <el-header class="header">
-        <span>你好，{{ userStore.user?.username }}</span>
-        <el-button link type="danger" @click="handleLogout">退出登录</el-button>
+        <el-dropdown @command="handleCommand">
+    <span class="user-info">
+      <!-- avatar 为空 → 显示名字首字；有头像 → 显示图片 -->
+      <el-avatar :size="32" :src="userStore.user?.avatar">
+        {{ (userStore.user?.nickname || userStore.user?.username || 'U')[0] }}
+      </el-avatar>
+      <span style="margin-left: 8px">{{ userStore.user?.nickname || userStore.user?.username }}</span>
+    </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人主页</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </el-header>
       <el-main>
         <router-view />

@@ -1,7 +1,7 @@
 package com.ai.learning.config;
 
 import com.ai.learning.common.BusinessException;
-import com.ai.learning.service.RateLimitService;
+import com.ai.learning.common.service.RateLimitService;
 import  com.ai.learning.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;

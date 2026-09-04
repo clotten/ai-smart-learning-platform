@@ -19,3 +19,8 @@ export function sendCode(email) {
 export function loginByCode(data) {
     return request.post('/auth/login-by-code', data)
 }
+
+//修改/重置密码（邮箱+验证码）
+export function resetPassword(data){
+    return request.post('/auth/reset-paaaword', data)
+}

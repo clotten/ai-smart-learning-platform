@@ -8,7 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * AI 智能学习平台 - 启动类
  */
 @SpringBootApplication
-@MapperScan("com.ai.learning.mapper")
+@MapperScan("com.ai.learning.**.mapper")
+
 public class LearningApplication {
 
     public static void main(String[] args) {

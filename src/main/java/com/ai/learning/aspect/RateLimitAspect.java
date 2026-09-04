@@ -3,7 +3,7 @@ package com.ai.learning.aspect;
 
 import com.ai.learning.annotation.RateLimit;
 import com.ai.learning.common.BusinessException;
-import com.ai.learning.service.RateLimitService;
+import com.ai.learning.common.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;

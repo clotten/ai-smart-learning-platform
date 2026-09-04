@@ -14,7 +14,8 @@ const router = createRouter({
         { path: 'question', component: () => import('../views/QuestionListView.vue')},
         { path: 'practice', component: () => import('../views/PracticeView.vue') },
         { path: 'leaderboard', component: () => import('../views/LeaderboardView.vue') },
-        { path: 'ai', component: () => import('../views/AiChatView.vue') }
+        { path: 'ai', component: () => import('../views/AiChatView.vue') },
+        { path: 'profile', component: () => import('../views/ProfileView.vue')}
       ]
     }
   ]

@@ -42,7 +42,7 @@ public class RateLimitProperties {
     @Data
     public static class BlacklistConfig{
         private int violations = 3;
-        private int windowsSeconds = 3600;
+        private int windowSeconds = 3600;
         private int banDays = 1;
     }
     /**
